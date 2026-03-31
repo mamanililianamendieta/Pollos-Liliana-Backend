@@ -1,5 +1,7 @@
 import os
+import json
 import sqlite3
+from datetime import datetime
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 
@@ -33,6 +35,7 @@ def get_db_connection():
 def init_db():
     conn = get_db_connection()
     c = conn.cursor()
+    # Products table
     c.execute('''
         CREATE TABLE IF NOT EXISTS products (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -44,7 +47,17 @@ def init_db():
             stock INTEGER NOT NULL
         )
     ''')
-    # Check if empty
+    # Sales history table
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS sales (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            sale_date TEXT NOT NULL,
+            sale_time TEXT NOT NULL,
+            items_json TEXT NOT NULL,
+            total REAL NOT NULL
+        )
+    ''')
+    # Seed products if empty
     c.execute('SELECT COUNT(*) FROM products')
     if c.fetchone()[0] == 0:
         for item in INITIAL_ITEMS:
@@ -55,10 +68,10 @@ def init_db():
     conn.commit()
     conn.close()
 
-# Initialize Database on startup
 init_db()
 
 
+# ─── AUTH ──────────────────────────────────────────────────────────────────────
 @app.route('/api/login', methods=['POST'])
 def login():
     data = request.json
@@ -66,6 +79,12 @@ def login():
         return jsonify({"success": True, "message": "Autenticado como administrador", "role": "admin", "token": "admin-token-74420831"}), 200
     return jsonify({"success": False, "message": "Credenciales inválidas"}), 401
 
+def is_admin(req):
+    token = req.headers.get('Authorization', '').replace('Bearer ', '')
+    return token == 'admin-token-74420831'
+
+
+# ─── PRODUCTS ──────────────────────────────────────────────────────────────────
 @app.route('/api/products', methods=['GET'])
 def get_products():
     conn = get_db_connection()
@@ -76,23 +95,18 @@ def get_products():
 @app.route('/api/products', methods=['POST'])
 def add_product():
     data = request.json
-    
     name = data.get('name')
     category = data.get('category')
     price = data.get('price')
     description = data.get('description')
-    image = data.get('image') or 'images/logo.png' # Fallback image
+    image = data.get('image') or 'images/logo.png'
     stock = data.get('stock', 0)
-    
     if not name or not category or price is None:
         return jsonify({"success": False, "message": "Faltan campos obligatorios"}), 400
-        
     conn = get_db_connection()
     c = conn.cursor()
-    c.execute('''
-        INSERT INTO products (name, category, price, description, image, stock)
-        VALUES (?, ?, ?, ?, ?, ?)
-    ''', (name, category, price, description, image, stock))
+    c.execute('INSERT INTO products (name, category, price, description, image, stock) VALUES (?, ?, ?, ?, ?, ?)',
+              (name, category, price, description, image, stock))
     conn.commit()
     new_id = c.lastrowid
     conn.close()
@@ -103,53 +117,116 @@ def update_product(id):
     data = request.json
     conn = get_db_connection()
     c = conn.cursor()
-    
-    # Check if exists
     prod = c.execute('SELECT * FROM products WHERE id = ?', (id,)).fetchone()
     if not prod:
-        return jsonify({"success":False, "message": "Producto no encontrado"}), 404
-        
+        return jsonify({"success": False, "message": "Producto no encontrado"}), 404
     name = data.get('name', prod['name'])
     category = data.get('category', prod['category'])
     price = data.get('price', prod['price'])
     description = data.get('description', prod['description'])
     stock = data.get('stock', prod['stock'])
-    
-    c.execute('''
-        UPDATE products 
-        SET name = ?, category = ?, price = ?, description = ?, stock = ?
-        WHERE id = ?
-    ''', (name, category, price, description, stock, id))
+    c.execute('UPDATE products SET name=?, category=?, price=?, description=?, stock=? WHERE id=?',
+              (name, category, price, description, stock, id))
     conn.commit()
     conn.close()
     return jsonify({"success": True, "message": "Producto actualizado"})
 
+
+# ─── BUY (saves sale to history) ──────────────────────────────────────────────
 @app.route('/api/buy', methods=['POST'])
 def buy_items():
-    data = request.json # expected list of items with id and quantity
+    data = request.json
     cart = data.get('cart', [])
     if not cart:
         return jsonify({"success": False, "message": "El carrito está vacío"}), 400
-        
+
     conn = get_db_connection()
     c = conn.cursor()
-    
+
+    total = 0.0
+    sale_items = []
+
     for item in cart:
         prod_id = item.get('id')
         qty = item.get('quantity', 0)
-        
-        # current stock
-        prod = c.execute('SELECT stock FROM products WHERE id = ?', (prod_id,)).fetchone()
+        prod = c.execute('SELECT * FROM products WHERE id = ?', (prod_id,)).fetchone()
         if prod and prod['stock'] >= qty:
             c.execute('UPDATE products SET stock = stock - ? WHERE id = ?', (qty, prod_id))
+            subtotal = prod['price'] * qty
+            total += subtotal
+            sale_items.append({
+                "id": prod_id,
+                "name": prod['name'],
+                "quantity": qty,
+                "price": prod['price'],
+                "subtotal": subtotal
+            })
         else:
             conn.rollback()
             conn.close()
             return jsonify({"success": False, "message": f"Stock insuficiente para producto ID {prod_id}"}), 400
-            
+
+    # Save sale to history
+    now = datetime.now()
+    sale_date = now.strftime('%Y-%m-%d')
+    sale_time = now.strftime('%H:%M:%S')
+    c.execute('INSERT INTO sales (sale_date, sale_time, items_json, total) VALUES (?, ?, ?, ?)',
+              (sale_date, sale_time, json.dumps(sale_items), total))
+
     conn.commit()
     conn.close()
-    return jsonify({"success": True, "message": "Compra procesada con éxito"})
+    return jsonify({"success": True, "message": "Compra procesada con éxito", "total": total})
+
+
+# ─── SALES HISTORY (admin only) ───────────────────────────────────────────────
+@app.route('/api/sales', methods=['GET'])
+def get_sales():
+    if not is_admin(request):
+        return jsonify({"success": False, "message": "No autorizado"}), 401
+
+    date_from = request.args.get('from')   # YYYY-MM-DD
+    date_to   = request.args.get('to')     # YYYY-MM-DD
+
+    conn = get_db_connection()
+    c = conn.cursor()
+
+    if date_from and date_to:
+        rows = c.execute('SELECT * FROM sales WHERE sale_date BETWEEN ? AND ? ORDER BY sale_date DESC, sale_time DESC',
+                         (date_from, date_to)).fetchall()
+    elif date_from:
+        rows = c.execute('SELECT * FROM sales WHERE sale_date = ? ORDER BY sale_time DESC',
+                         (date_from,)).fetchall()
+    else:
+        # Last 3 distinct dates with sales
+        dates = c.execute("SELECT DISTINCT sale_date FROM sales ORDER BY sale_date DESC LIMIT 3").fetchall()
+        if not dates:
+            conn.close()
+            return jsonify([])
+        date_list = [d['sale_date'] for d in dates]
+        placeholders = ','.join(['?' for _ in date_list])
+        rows = c.execute(f'SELECT * FROM sales WHERE sale_date IN ({placeholders}) ORDER BY sale_date DESC, sale_time DESC',
+                         date_list).fetchall()
+
+    conn.close()
+    result = []
+    for row in rows:
+        r = dict(row)
+        r['items'] = json.loads(r['items_json'])
+        del r['items_json']
+        result.append(r)
+    return jsonify(result)
+
+
+@app.route('/api/sales/dates', methods=['GET'])
+def get_sale_dates():
+    """Returns the last 3 dates that had sales."""
+    if not is_admin(request):
+        return jsonify({"success": False, "message": "No autorizado"}), 401
+    conn = get_db_connection()
+    rows = conn.execute("SELECT DISTINCT sale_date FROM sales ORDER BY sale_date DESC LIMIT 3").fetchall()
+    conn.close()
+    return jsonify([r['sale_date'] for r in rows])
+
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
