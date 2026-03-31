@@ -57,6 +57,21 @@ def init_db():
             total REAL NOT NULL
         )
     ''')
+    # Reservations table (physical visits, does NOT reduce stock)
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS reservations (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            res_date TEXT NOT NULL,
+            res_time TEXT NOT NULL,
+            created_at TEXT NOT NULL,
+            guest_name TEXT NOT NULL,
+            visit_date TEXT NOT NULL,
+            visit_time TEXT NOT NULL,
+            guests INTEGER NOT NULL,
+            items_json TEXT NOT NULL,
+            notes TEXT
+        )
+    ''')
     # Seed products if empty
     c.execute('SELECT COUNT(*) FROM products')
     if c.fetchone()[0] == 0:
@@ -226,6 +241,67 @@ def get_sale_dates():
     rows = conn.execute("SELECT DISTINCT sale_date FROM sales ORDER BY sale_date DESC LIMIT 3").fetchall()
     conn.close()
     return jsonify([r['sale_date'] for r in rows])
+
+
+# ─── RESERVATIONS ───────────────────────────────────────────────────────
+@app.route('/api/reservation', methods=['POST'])
+def create_reservation():
+    data = request.json
+    guest_name  = data.get('name', '')
+    visit_date  = data.get('date', '')
+    visit_time  = data.get('time', '')
+    guests      = data.get('guests', 1)
+    items       = data.get('items', [])   # list of {id, name, quantity, price}
+    notes       = data.get('notes', '')
+
+    if not guest_name or not visit_date or not visit_time:
+        return jsonify({'success': False, 'message': 'Faltan campos obligatorios'}), 400
+
+    now = datetime.now()
+    conn = get_db_connection()
+    conn.execute(
+        'INSERT INTO reservations (res_date, res_time, created_at, guest_name, visit_date, visit_time, guests, items_json, notes) VALUES (?,?,?,?,?,?,?,?,?)',
+        (now.strftime('%Y-%m-%d'), now.strftime('%H:%M:%S'), now.isoformat(),
+         guest_name, visit_date, visit_time, guests, json.dumps(items), notes)
+    )
+    conn.commit()
+    conn.close()
+    return jsonify({'success': True, 'message': 'Reserva registrada'}), 201
+
+
+@app.route('/api/reservations', methods=['GET'])
+def get_reservations():
+    if not is_admin(request):
+        return jsonify({'success': False, 'message': 'No autorizado'}), 401
+
+    date_from = request.args.get('from')
+    date_to   = request.args.get('to')
+    conn = get_db_connection()
+    c = conn.cursor()
+
+    if date_from and date_to:
+        rows = c.execute('SELECT * FROM reservations WHERE visit_date BETWEEN ? AND ? ORDER BY visit_date DESC, visit_time DESC',
+                         (date_from, date_to)).fetchall()
+    elif date_from:
+        rows = c.execute('SELECT * FROM reservations WHERE visit_date = ? ORDER BY visit_time DESC',
+                         (date_from,)).fetchall()
+    else:
+        dates = c.execute('SELECT DISTINCT visit_date FROM reservations ORDER BY visit_date DESC LIMIT 3').fetchall()
+        if not dates:
+            conn.close(); return jsonify([])
+        date_list    = [d['visit_date'] for d in dates]
+        placeholders = ','.join(['?'] * len(date_list))
+        rows = c.execute(f'SELECT * FROM reservations WHERE visit_date IN ({placeholders}) ORDER BY visit_date DESC, visit_time DESC',
+                         date_list).fetchall()
+
+    conn.close()
+    result = []
+    for row in rows:
+        r = dict(row)
+        r['items'] = json.loads(r['items_json'])
+        del r['items_json']
+        result.append(r)
+    return jsonify(result)
 
 
 if __name__ == '__main__':
