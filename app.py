@@ -10,21 +10,21 @@ CORS(app)
 DB_FILE = 'pollos.db'
 
 INITIAL_ITEMS = [
-    {"id":1,"name":"Hamburguesa Simple","category":"hamburguesas","price":35.00,"description":"Carne jugosa, lechuga fresca, tomate y nuestras salsas clásicas.","image":"images/hamburguesasimple.png","stock":20},
-    {"id":2,"name":"Hamburguesa Doble","category":"hamburguesas","price":45.00,"description":"Doble porción de carne y queso para los verdaderos amantes de las burgers.","image":"images/hamburguesadoble.png","stock":15},
-    {"id":13,"name":"Hamburguesa Especial","category":"hamburguesas","price":55.00,"description":"Con tocino crujiente, aros de cebolla y nuestra salsa barbacoa secreta.","image":"images/hamburguesaespecial.png","stock":10},
-    {"id":3,"name":"Lomito Simple","category":"lomitos","price":40.00,"description":"Tierno lomito de res a la plancha, con chimichurri, lechuga y tomate.","image":"images/lomitosimple.png","stock":10},
-    {"id":4,"name":"Lomito Doble","category":"lomitos","price":50.00,"description":"El doble de sabor con extra lomito y huevo frito.","image":"images/lomitodoble.png","stock":8},
-    {"id":15,"name":"Lomito Especial","category":"lomitos","price":60.00,"description":"El rey de la casa: lomito, doble queso, tocino, huevo y pimientos.","image":"images/lomitoespecial.png","stock":7},
-    {"id":6,"name":"Pollo Económico","category":"pollos","price":25.00,"description":"Una presa de nuestro delicioso pollo con una porción de papas fritas.","image":"images/polloeco.png","stock":15},
-    {"id":5,"name":"Pollo Cuarto","category":"pollos","price":35.00,"description":"Jugoso cuarto de pollo marinado a las brasas, acompañado de papas y ensalada.","image":"images/pollocuarto.png","stock":12},
-    {"id":16,"name":"Pollo Especial","category":"pollos","price":45.00,"description":"Un jugoso cuarto de pollo con chorizo, papas fritas especiales y doble ensalada.","image":"images/polloespecial.png","stock":10},
-    {"id":7,"name":"Coca-Cola 2Litros","category":"sodas","price":15.00,"description":"La clásica e inconfundible gaseosa para acompañar tu comida.","image":"images/cocacola.png","stock":50},
-    {"id":8,"name":"Fanta 2Litros","category":"sodas","price":15.00,"description":"Refrescante sabor a naranja que te encantará.","image":"images/fanta.png","stock":40},
-    {"id":9,"name":"Sprite 2Litros","category":"sodas","price":15.00,"description":"El toque cítrico perfecto para tu paladar.","image":"images/sprite.png","stock":10},
-    {"id":10,"name":"Vaso de Limonada","category":"refrescos","price":3.00,"description":"Hecha con limones frescos, ideal para calmar la sed.","image":"images/limonada.png","stock":18},
-    {"id":11,"name":"Vaso de Mocochinchi","category":"refrescos","price":3.00,"description":"Bebida tradicional a base de durazno deshidratado y canela.","image":"images/mocochinchi.png","stock":9},
-    {"id":12,"name":"Vaso de Chicha","category":"refrescos","price":3.00,"description":"Clásico refresco hecho de maíz morado, piña y especias.","image":"images/chicha.png","stock":4}
+    {"id":1,"name":"Hamburguesa Simple","category":"hamburguesas","price":12.00,"description":"Carne jugosa, lechuga fresca, tomate y nuestras salsas clásicas.","image":"images/hamburguesasimple.png","stock":20},
+    {"id":2,"name":"Hamburguesa Doble","category":"hamburguesas","price":17.00,"description":"Doble porción de carne y queso para los verdaderos amantes de las burgers.","image":"images/hamburguesadoble.png","stock":20},
+    {"id":13,"name":"Hamburguesa Especial","category":"hamburguesas","price":22.00,"description":"Con tocino crujiente, aros de cebolla y nuestra salsa barbacoa secreta.","image":"images/hamburguesaespecial.png","stock":20},
+    {"id":3,"name":"Lomito Simple","category":"lomitos","price":15.00,"description":"Tierno lomito de res a la plancha, con chimichurri, lechuga y tomate.","image":"images/lomitosimple.png","stock":20},
+    {"id":4,"name":"Lomito Doble","category":"lomitos","price":20.00,"description":"El doble de sabor con extra lomito y huevo frito.","image":"images/lomitodoble.png","stock":20},
+    {"id":15,"name":"Lomito Especial","category":"lomitos","price":25.00,"description":"El rey de la casa: lomito, doble queso, tocino, huevo y pimientos.","image":"images/lomitoespecial.png","stock":20},
+    {"id":6,"name":"Pollo Económico","category":"pollos","price":10.00,"description":"Una presa de nuestro delicioso pollo con una porción de papas fritas.","image":"images/polloeco.png","stock":20},
+    {"id":5,"name":"Pollo Cuarto","category":"pollos","price":15.00,"description":"Jugoso cuarto de pollo marinado a las brasas, acompañado de papas y ensalada.","image":"images/pollocuarto.png","stock":20},
+    {"id":16,"name":"Pollo Especial","category":"pollos","price":20.00,"description":"Un jugoso cuarto de pollo con chorizo, papas fritas especiales y doble ensalada.","image":"images/polloespecial.png","stock":20},
+    {"id":7,"name":"Coca-Cola 2L","category":"sodas","price":13.00,"description":"La clásica e inconfundible gaseosa para acompañar tu comida.","image":"images/cocacola.png","stock":20},
+    {"id":8,"name":"Fanta 2L","category":"sodas","price":13.00,"description":"Refrescante sabor a naranja que te encantará.","image":"images/fanta.png","stock":20},
+    {"id":9,"name":"Sprite 2L","category":"sodas","price":13.00,"description":"El toque cítrico perfecto para tu paladar.","image":"images/sprite.png","stock":20},
+    {"id":10,"name":"Limonada","category":"refrescos","price":2.00,"description":"Hecha con limones frescos, ideal para calmar la sed.","image":"images/limonada.png","stock":20},
+    {"id":11,"name":"Mocochinchi","category":"refrescos","price":2.00,"description":"Bebida tradicional a base de durazno deshidratado y canela.","image":"images/mocochinchi.png","stock":20},
+    {"id":12,"name":"Chicha","category":"refrescos","price":2.00,"description":"Clásico refresco hecho de maíz morado, piña y especias.","image":"images/chicha.png","stock":20}
 ]
 
 def get_db_connection():
@@ -68,7 +68,8 @@ def init_db():
             visit_date TEXT NOT NULL,
             visit_time TEXT NOT NULL,
             guests INTEGER NOT NULL,
-            items_json TEXT NOT NULL,
+
+items_json TEXT NOT NULL,
             notes TEXT
         )
     ''')
@@ -85,7 +86,6 @@ def init_db():
 
 init_db()
 
-
 # ─── AUTH ──────────────────────────────────────────────────────────────────────
 @app.route('/api/login', methods=['POST'])
 def login():
@@ -97,7 +97,6 @@ def login():
 def is_admin(req):
     token = req.headers.get('Authorization', '').replace('Bearer ', '')
     return token == 'admin-token-74420831'
-
 
 # ─── PRODUCTS ──────────────────────────────────────────────────────────────────
 @app.route('/api/products', methods=['GET'])
@@ -146,7 +145,6 @@ def update_product(id):
     conn.close()
     return jsonify({"success": True, "message": "Producto actualizado"})
 
-
 # ─── BUY (saves sale to history) ──────────────────────────────────────────────
 @app.route('/api/buy', methods=['POST'])
 def buy_items():
@@ -192,8 +190,6 @@ def buy_items():
     conn.close()
     return jsonify({"success": True, "message": "Compra procesada con éxito", "total": total})
 
-
-# ─── SALES HISTORY (admin only) ───────────────────────────────────────────────
 @app.route('/api/sales', methods=['GET'])
 def get_sales():
     if not is_admin(request):
@@ -242,8 +238,6 @@ def get_sale_dates():
     conn.close()
     return jsonify([r['sale_date'] for r in rows])
 
-
-# ─── RESERVATIONS ───────────────────────────────────────────────────────
 @app.route('/api/reservation', methods=['POST'])
 def create_reservation():
     data = request.json
