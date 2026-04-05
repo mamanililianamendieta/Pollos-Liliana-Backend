@@ -9,6 +9,7 @@ app = Flask(__name__)
 CORS(app)
 DB_FILE = 'pollos.db'
 
+
 INITIAL_ITEMS = [
     {"id":1,"name":"Hamburguesa Simple","category":"hamburguesas","price":12.00,"description":"Carne jugosa, lechuga fresca, tomate y nuestras salsas clásicas.","image":"images/hamburguesasimple.png","stock":20},
     {"id":2,"name":"Hamburguesa Doble","category":"hamburguesas","price":17.00,"description":"Doble porción de carne y queso para los verdaderos amantes de las burgers.","image":"images/hamburguesadoble.png","stock":20},
@@ -68,8 +69,7 @@ def init_db():
             visit_date TEXT NOT NULL,
             visit_time TEXT NOT NULL,
             guests INTEGER NOT NULL,
-
-items_json TEXT NOT NULL,
+            items_json TEXT NOT NULL,
             notes TEXT
         )
     ''')
@@ -86,6 +86,7 @@ items_json TEXT NOT NULL,
 
 init_db()
 
+
 # ─── AUTH ──────────────────────────────────────────────────────────────────────
 @app.route('/api/login', methods=['POST'])
 def login():
@@ -97,6 +98,7 @@ def login():
 def is_admin(req):
     token = req.headers.get('Authorization', '').replace('Bearer ', '')
     return token == 'admin-token-74420831'
+
 
 # ─── PRODUCTS ──────────────────────────────────────────────────────────────────
 @app.route('/api/products', methods=['GET'])
@@ -145,6 +147,23 @@ def update_product(id):
     conn.close()
     return jsonify({"success": True, "message": "Producto actualizado"})
 
+@app.route('/api/products/reset', methods=['POST'])
+def reset_products():
+    if not is_admin(request):
+        return jsonify({"success": False, "message": "No autorizado"}), 401
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute('DELETE FROM products')
+    for item in INITIAL_ITEMS:
+        c.execute('''
+            INSERT INTO products (id, name, category, price, description, image, stock)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        ''', (item['id'], item['name'], item['category'], item['price'], item['description'], item['image'], item['stock']))
+    conn.commit()
+    conn.close()
+    return jsonify({"success": True, "message": "Menú restaurado a los precios base"})
+
+
 # ─── BUY (saves sale to history) ──────────────────────────────────────────────
 @app.route('/api/buy', methods=['POST'])
 def buy_items():
@@ -190,6 +209,8 @@ def buy_items():
     conn.close()
     return jsonify({"success": True, "message": "Compra procesada con éxito", "total": total})
 
+
+# ─── SALES HISTORY (admin only) ───────────────────────────────────────────────
 @app.route('/api/sales', methods=['GET'])
 def get_sales():
     if not is_admin(request):
@@ -238,6 +259,8 @@ def get_sale_dates():
     conn.close()
     return jsonify([r['sale_date'] for r in rows])
 
+
+# ─── RESERVATIONS ───────────────────────────────────────────────────────
 @app.route('/api/reservation', methods=['POST'])
 def create_reservation():
     data = request.json
